@@ -106,6 +106,23 @@ impl NetworkNamespace {
         .await
     }
 
+    pub fn get_fd(ns_name: String) -> Result<i32, Error> {
+        let dir_path = Path::new(NETNS_PATH);
+        let ns_path = dir_path.join(ns_name);
+
+        let mut open_flags = OFlag::empty();
+        open_flags.insert(OFlag::O_RDONLY);
+        open_flags.insert(OFlag::O_EXCL);
+        match nix::fcntl::open(&ns_path, open_flags, Mode::empty()) {
+            Ok(raw_fd) => Ok(raw_fd),
+            Err(e) => {
+                log::error!("open error: {}", e);
+                let err_msg = format!("open error: {e}");
+                Err(Error::NamespaceError(err_msg))
+            }
+        }
+    }
+
     pub fn prep_for_fork() -> Result<(), Error> {
         // Placeholder function, nothing to do here.
         Ok(())
